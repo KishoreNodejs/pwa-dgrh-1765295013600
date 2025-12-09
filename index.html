@@ -1,0 +1,519 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes" />
+  <title>Dgrh</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+
+  <meta name="theme-color" content="#8b5cf6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dgrh" />
+  <link rel="apple-touch-icon" href="icon-512.png" />
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+
+    /* Install Button */
+    #pwa-install-btn {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      padding: 12px 20px;
+      border-radius: 999px;
+      border: none;
+      background: #8b5cf6;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      z-index: 9999;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #pwa-install-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+
+    #pwa-install-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Debug Panel (remove in production) */
+    #pwa-debug {
+      position: fixed;
+      bottom: 80px;
+      right: 16px;
+      background: rgba(0,0,0,0.85);
+      color: #0f0;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 11px;
+      max-width: 300px;
+      display: none;
+      z-index: 9998;
+    }
+
+    #pwa-debug.show {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Calculator</title>
+    <style>
+      html,
+      body {
+        overscroll-behavior-y: contain;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+        font-size: clamp(24px, 8vw, 38px);
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.1s ease;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .btn-num {
+        background-color: #333333;
+        color: #ffffff;
+        border-radius: 9999px;
+        aspect-ratio: 1 / 1;
+      }
+      .btn-num:hover,
+      .btn-num:focus {
+        background-color: #555555;
+      }
+      .btn-num:active {
+        background-color: #777777;
+      }
+      .btn-op {
+        background-color: #ff9500;
+        color: #ffffff;
+        border-radius: 9999px;
+        aspect-ratio: 1 / 1;
+      }
+      .btn-op:hover,
+      .btn-op:focus {
+        background-color: #ffab3e;
+      }
+      .btn-op:active {
+        background-color: #ffc27a;
+      }
+      .btn-special {
+        background-color: #a5a5a5;
+        color: #000000;
+        border-radius: 9999px;
+        aspect-ratio: 1 / 1;
+      }
+      .btn-special:hover,
+      .btn-special:focus {
+        background-color: #bdbdbd;
+      }
+      .btn-special:active {
+        background-color: #d4d4d4;
+      }
+      .col-span-2 {
+        grid-column: span 2;
+        aspect-ratio: auto;
+        justify-content: flex-start;
+        padding-left: clamp(20px, 7.5vw, 34px);
+      }
+      .active-op {
+        background-color: #ffffff;
+        color: #ff9500;
+      }
+    </style>
+  </head>
+  <body style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #000000; color: #ffffff; overflow: hidden;">
+    <div style="display: flex; flex-direction: column; justify-content: flex-end; height: 100vh; height: -webkit-fill-available; width: 100vw; box-sizing: border-box; padding: env(safe-area-inset-top) 0 0;">
+      <div data-output-display style="display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; padding: 0 2rem 2rem 2rem; overflow: hidden; min-height: 30vh;">
+        <span class="scrollbar-hide" data-previous-operand style="color: #a0a0a0; font-size: clamp(16px, 4vw, 24px); height: 1.5em; font-weight: 400; white-space: nowrap; overflow-x: auto; max-width: 100%; display: block;"></span>
+        <span class="scrollbar-hide" data-current-operand style="font-size: clamp(48px, 15vw, 96px); font-weight: 300; white-space: nowrap; overflow-x: auto; max-width: 100%; display: block;">0</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(8px, 3.5vw, 16px); padding: clamp(12px, 5vw, 24px); padding-bottom: max(clamp(12px, 5vw, 24px), env(safe-area-inset-bottom));">
+        <button class="btn btn-special" data-all-clear>AC</button>
+        <button class="btn btn-special" data-delete>⌫</button>
+        <button class="btn btn-special" data-operator>±</button>
+        <button class="btn btn-op" data-operator>÷</button>
+        <button class="btn btn-num" data-number>7</button>
+        <button class="btn btn-num" data-number>8</button>
+        <button class="btn btn-num" data-number>9</button>
+        <button class="btn btn-op" data-operator>×</button>
+        <button class="btn btn-num" data-number>4</button>
+        <button class="btn btn-num" data-number>5</button>
+        <button class="btn btn-num" data-number>6</button>
+        <button class="btn btn-op" data-operator>-</button>
+        <button class="btn btn-num" data-number>1</button>
+        <button class="btn btn-num" data-number>2</button>
+        <button class="btn btn-num" data-number>3</button>
+        <button class="btn btn-op" data-operator>+</button>
+        <button class="btn btn-num col-span-2" data-number>0</button>
+        <button class="btn btn-num" data-number>.</button>
+        <button class="btn btn-op" data-equals>=</button>
+      </div>
+    </div>
+    <script>
+      class Calculator {
+        constructor(previousOperandTextElement, currentOperandTextElement, allClearButton, operatorButtons) {
+          this.previousOperandTextElement = previousOperandTextElement;
+          this.currentOperandTextElement = currentOperandTextElement;
+          this.allClearButton = allClearButton;
+          this.operatorButtons = operatorButtons;
+          this.clear();
+        }
+        clear() {
+          this.currentOperand = '0';
+          this.previousOperand = '';
+          this.operation = undefined;
+        }
+        delete() {
+          if (this.currentOperand === '0') return;
+          this.currentOperand = this.currentOperand.toString().slice(0, -1);
+          if (this.currentOperand === '' || this.currentOperand === '-') {
+            this.currentOperand = '0';
+          }
+        }
+        toggleSign() {
+          if (this.currentOperand === '0' || this.currentOperand === '') return;
+          if (this.currentOperand.startsWith('-')) {
+            this.currentOperand = this.currentOperand.substring(1);
+          } else {
+            this.currentOperand = '-' + this.currentOperand;
+          }
+        }
+        appendNumber(number) {
+          if (number === '.' && this.currentOperand.includes('.')) return;
+          if (this.currentOperand === '0' && number !== '.') {
+            this.currentOperand = number.toString();
+          } else if (this.currentOperand === '-0' && number !== '.') {
+            this.currentOperand = '-' + number.toString();
+          } else {
+            this.currentOperand = this.currentOperand.toString() + number.toString();
+          }
+        }
+        chooseOperation(operation) {
+          if (operation === '±') {
+            this.toggleSign();
+            return;
+          }
+          if (this.currentOperand === '' && this.previousOperand === '') return;
+          if (this.currentOperand === '' && this.previousOperand !== '') {
+            this.operation = operation;
+            return;
+          }
+          if (this.previousOperand !== '') {
+            this.compute();
+          }
+          this.operation = operation;
+          this.previousOperand = this.currentOperand;
+          this.currentOperand = '';
+        }
+        compute() {
+          let computation;
+          const prev = parseFloat(this.previousOperand);
+          const current = parseFloat(this.currentOperand);
+          if (isNaN(prev) || isNaN(current)) return;
+          switch (this.operation) {
+            case '+':
+              computation = prev + current;
+              break;
+            case '-':
+              computation = prev - current;
+              break;
+            case '×':
+              computation = prev * current;
+              break;
+            case '÷':
+              computation = prev / current;
+              break;
+            default:
+              return;
+          }
+          this.currentOperand = computation.toString();
+          this.operation = undefined;
+          this.previousOperand = '';
+        }
+        getDisplayNumber(number) {
+          const stringNumber = number.toString();
+          const integerDigits = parseFloat(stringNumber.split('.')[0]);
+          const decimalDigits = stringNumber.split('.')[1];
+          let integerDisplay;
+          if (isNaN(integerDigits)) {
+            integerDisplay = '';
+          } else {
+            integerDisplay = integerDigits.toLocaleString('en', {
+              maximumFractionDigits: 0
+            });
+          }
+          if (decimalDigits != null) {
+            return `${integerDisplay}.${decimalDigits}`;
+          } else {
+            return integerDisplay;
+          }
+        }
+        updateDisplay() {
+          this.currentOperandTextElement.innerText = this.getDisplayNumber(this.currentOperand || '0');
+          this.operatorButtons.forEach(b => b.classList.remove('active-op'));
+          if (this.operation != null) {
+            this.previousOperandTextElement.innerText = `${this.getDisplayNumber(this.previousOperand)} ${this.operation}`;
+            const selectedButton = Array.from(this.operatorButtons).find(b => b.innerText === this.operation);
+            if (selectedButton) selectedButton.classList.add('active-op');
+          } else {
+            this.previousOperandTextElement.innerText = '';
+          }
+          if (this.currentOperand !== '0' || this.previousOperand !== '' || this.operation != null) {
+            this.allClearButton.innerText = 'C';
+          } else {
+            this.allClearButton.innerText = 'AC';
+          }
+        }
+      }
+      const numberButtons = document.querySelectorAll('[data-number]');
+      const operatorButtons = document.querySelectorAll('[data-operator]');
+      const equalsButton = document.querySelector('[data-equals]');
+      const deleteButton = document.querySelector('[data-delete]');
+      const allClearButton = document.querySelector('[data-all-clear]');
+      const previousOperandTextElement = document.querySelector('[data-previous-operand]');
+      const currentOperandTextElement = document.querySelector('[data-current-operand]');
+      const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, allClearButton, operatorButtons);
+      numberButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          calculator.appendNumber(button.innerText);
+          calculator.updateDisplay();
+        });
+      });
+      operatorButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          calculator.chooseOperation(button.innerText);
+          calculator.updateDisplay();
+        });
+      });
+      equalsButton.addEventListener('click', () => {
+        calculator.compute();
+        calculator.updateDisplay();
+      });
+      allClearButton.addEventListener('click', () => {
+        calculator.clear();
+        calculator.updateDisplay();
+      });
+      deleteButton.addEventListener('click', () => {
+        calculator.delete();
+        calculator.updateDisplay();
+      });
+      document.addEventListener('keydown', e => {
+        let key = e.key;
+        if (key >= '0' && key <= '9' || key === '.') {
+          e.preventDefault();
+          calculator.appendNumber(key);
+          calculator.updateDisplay();
+        } else if (key === '+' || key === '-') {
+          e.preventDefault();
+          calculator.chooseOperation(key);
+          calculator.updateDisplay();
+        } else if (key === '*') {
+          e.preventDefault();
+          calculator.chooseOperation('×');
+          calculator.updateDisplay();
+        } else if (key === '/') {
+          e.preventDefault();
+          calculator.chooseOperation('÷');
+          calculator.updateDisplay();
+        } else if (key === 'Enter' || key === '=') {
+          e.preventDefault();
+          calculator.compute();
+          calculator.updateDisplay();
+        } else if (key === 'Backspace') {
+          e.preventDefault();
+          calculator.delete();
+          calculator.updateDisplay();
+        } else if (key === 'Escape' || key.toLowerCase() === 'c') {
+          e.preventDefault();
+          calculator.clear();
+          calculator.updateDisplay();
+        }
+      });
+    </script>
+  </body>
+</html>
+
+<button id="pwa-install-btn" onclick="installPWA()">
+  📱 Install App
+</button>
+
+<div id="pwa-debug"></div>
+
+<script>
+// Debug logger
+function logDebug(msg) {
+  console.log('[PWA]', msg);
+  const debugEl = document.getElementById('pwa-debug');
+  if (debugEl) {
+    debugEl.innerHTML += msg + '<br>';
+    debugEl.classList.add('show');
+  }
+}
+
+// Check if already installed
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  logDebug('✅ Already running as installed PWA');
+} else {
+  logDebug('📱 Running in browser mode');
+}
+
+// Check HTTPS
+if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  logDebug('✅ Secure context (HTTPS or localhost)');
+} else {
+  logDebug('❌ Not HTTPS - PWA install will NOT work!');
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  logDebug('✅ Service Worker supported');
+  
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => {
+        logDebug('✅ Service Worker registered');
+        
+        if (reg.installing) {
+          logDebug('⏳ Service Worker installing...');
+        } else if (reg.waiting) {
+          logDebug('⏸️ Service Worker waiting');
+        } else if (reg.active) {
+          logDebug('✅ Service Worker active');
+        }
+
+        // Wait for service worker to be ready
+        return navigator.serviceWorker.ready;
+      })
+      .then(() => {
+        logDebug('✅ Service Worker ready');
+      })
+      .catch(err => {
+        logDebug('❌ Service Worker error: ' + err.message);
+        console.error('[PWA] SW error:', err);
+      });
+  });
+} else {
+  logDebug('❌ Service Worker not supported');
+}
+
+let deferredPrompt;
+
+// Capture installation prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  logDebug('🎉 beforeinstallprompt event fired!');
+  console.log('[PWA] Install prompt available');
+  
+  e.preventDefault();
+  deferredPrompt = e;
+
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) {
+    btn.style.display = 'flex';
+    logDebug('✅ Install button shown');
+  }
+});
+
+// Detect successful installation
+window.addEventListener('appinstalled', () => {
+  logDebug('✅ PWA successfully installed!');
+  console.log('[PWA] App installed');
+  deferredPrompt = null;
+});
+
+// Check why prompt might not show after 3 seconds
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (!deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
+      logDebug('⚠️ Install prompt NOT available. Possible reasons:');
+      logDebug('1. Not HTTPS/localhost?');
+      logDebug('2. Already installed?');
+      logDebug('3. Recently uninstalled?');
+      logDebug('4. Browser doesn't support PWA?');
+      logDebug('5. Manifest/SW issues?');
+      
+      console.log('[PWA] Install prompt not available. Check console for details.');
+    }
+  }, 3000);
+});
+
+// Install function
+window.installPWA = async function () {
+  const btn = document.getElementById('pwa-install-btn');
+
+  if (!deferredPrompt) {
+    logDebug('❌ Install prompt not available');
+    console.log('[PWA] No deferred prompt available');
+    if (btn) btn.style.display = 'none';
+    return 'not_available';
+  }
+
+  try {
+    logDebug('📱 Showing install prompt...');
+    deferredPrompt.prompt();
+    
+    const { outcome } = await deferredPrompt.userChoice;
+    logDebug('Install outcome: ' + outcome);
+    console.log('[PWA] Install outcome:', outcome);
+    
+    deferredPrompt = null;
+
+    if (btn) btn.style.display = 'none';
+
+    return outcome;
+  } catch (err) {
+    logDebug('❌ Install error: ' + err.message);
+    console.error('[PWA] Install error:', err);
+    return 'error';
+  }
+};
+
+// Hide debug panel after 10 seconds (optional)
+setTimeout(() => {
+  const debugEl = document.getElementById('pwa-debug');
+  if (debugEl) debugEl.classList.remove('show');
+}, 10000);
+</script>
+
+</body>
+</html>
